@@ -54,7 +54,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -65,7 +65,7 @@ body {
   flex-direction: column;
   max-width: 44rem;
   margin-inline: 1rem;
-  height: 96vh;
+  height: 96dvh;
   background: var(--secondary-color);
   border-radius: var(--border-radius);
   overflow: hidden;
@@ -140,6 +140,7 @@ body {
 
 .input-area textarea {
   flex: 1;
+  font-size: 1.6rem;
   padding: 10px;
   border: none;
   border-radius: var(--border-radius);
