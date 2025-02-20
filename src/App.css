@@ -10,7 +10,6 @@
   --secondary-color: #2a2a2a;
   --text-color: #ffffff;
   --message-bg: #1e1e1e;
-  --message-received-bg: #2b2b2b;
   --grey-color: #444;
   --border-radius: 16px;
   --focus-color: rgb(221, 224, 189);
@@ -114,10 +113,15 @@ body {
 }
 
 .options-button {
+  cursor: pointer;
   border: none;
   background: none;
   padding-top: 2px;
   padding-right: 6px;
+}
+
+.options-button:hover .more {
+  color: orangered;
 }
 
 .user .options-button {
