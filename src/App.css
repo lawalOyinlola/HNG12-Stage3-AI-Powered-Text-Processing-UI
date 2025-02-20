@@ -1,0 +1,237 @@
+/** Chat Interface Styling **/
+
+@import url("//fonts.googleapis.com/earlyaccess/jejumyeongjo.css");
+@import url("https://fonts.googleapis.com/css2?family=Road+Rage&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+
+:root {
+  --bg-color: #121212;
+  --primary-color: #0e464f;
+  --secondary-color: #2a2a2a;
+  --text-color: #ffffff;
+  --message-bg: #1e1e1e;
+  --message-received-bg: #2b2b2b;
+  --grey-color: #444;
+  --border-radius: 16px;
+  --focus-color: rgb(221, 224, 189);
+  --hover-color: #052f35;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.4rem rgba(221, 224, 189, 0.5);
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.4rem rgba(221, 224, 189, 0.5);
+}
+
+html {
+  /* 1rem = 16px,  convert 1rem =10px */
+  /* 10/16 = 0.625 ~ 62.5% */
+  font-size: 62.5%;
+  overflow-x: hidden;
+
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: JejuMyeongjo, serif;
+  font-size: 1.6rem;
+  background: radial-gradient(
+      52.52% 32.71% at 50% 97.66%,
+      rgba(36, 160, 181, 0.2) 0%,
+      rgba(36, 160, 181, 0) 100%
+    ),
+    var(--bg-color);
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.chat-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: 44rem;
+  margin-inline: 1rem;
+  height: 96vh;
+  background: var(--secondary-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.chat-header {
+  padding: 15px;
+  background: var(--primary-color);
+  text-align: center;
+  font-weight: bold;
+}
+
+.chat-box {
+  flex: 1;
+  padding: 15px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+}
+
+.message {
+  max-width: 75%;
+  padding: 10px 15px;
+  word-wrap: break-word;
+  transition: transform 0.2s ease-in-out;
+}
+
+.message:hover {
+  transform: scale(1.02);
+}
+
+.bot {
+  align-self: flex-start;
+  background: var(--primary-color);
+  border-radius: 0 20px 20px;
+}
+
+.user {
+  border-radius: 20px 20px 0;
+  align-self: flex-end;
+  background: var(--grey-color);
+}
+
+.options-button {
+  border: none;
+  background: none;
+  padding-top: 2px;
+  padding-right: 6px;
+}
+
+.user .options-button {
+  float: right;
+  padding-left: 6px;
+  padding-right: 0;
+}
+
+.input-area {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: var(--secondary-color);
+  border-top: 2px solid var(--grey-color);
+}
+
+.input-area textarea {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: var(--border-radius);
+  resize: none;
+  height: 3.6rem;
+  background: var(--message-bg);
+  color: var(--text-color);
+}
+
+.input-area button {
+  align-self: flex-end;
+  padding: 10px 15px;
+  background: var(--primary-color);
+  border: none;
+  border-radius: var(--border-radius);
+  color: #fff;
+  transition: 0.3s;
+}
+
+.input-area button:hover {
+  background: var(--hover-color);
+  scale: 1.1;
+}
+
+.typing {
+  font-size: 1.2rem;
+  padding: 0 10px 10px 20px;
+}
+
+.selected {
+  position: relative;
+  background-color: var(--hover-color);
+  z-index: 90;
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.6);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  position: absolute;
+  min-width: 20rem;
+  background: var(--secondary-color);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  top: 36px;
+}
+
+.user .modal {
+  right: 6px;
+  align-items: end;
+}
+
+.bot .modal {
+  left: 6px;
+  align-items: start;
+}
+
+.modal > div {
+  display: flex;
+  gap: 5px;
+}
+
+.modal p {
+  color: orangered;
+  font-size: 1.4rem;
+  font-style: italic;
+}
+
+.modal > div > select {
+  border: none;
+  background: var(--primary-color);
+  color: var(--text-color);
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.modal button {
+  padding: 5px 10px;
+  border: none;
+  background: none;
+  color: white;
+  cursor: pointer;
+}
+
+.modal button:hover {
+  background: var(--primary-color);
+}
