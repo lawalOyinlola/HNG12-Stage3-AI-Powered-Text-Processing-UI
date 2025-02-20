@@ -1,8 +1,23 @@
 import { createContext, useContext, useState, useEffect } from "react";
-
 interface DetectedLanguage {
   detectedLanguage: string;
   confidence: number;
+}
+
+interface LanguageDetector {
+  detect: (text: string) => Promise<DetectedLanguage[]>;
+  ready: Promise<void>;
+}
+
+interface TranslatorInstance {
+  translate: (text: string) => Promise<string>;
+}
+
+interface Translator {
+  create: (params: {
+    sourceLanguage: string;
+    targetLanguage: string;
+  }) => Promise<TranslatorInstance>;
 }
 
 interface LanguageProcessingContextProps {
@@ -42,8 +57,8 @@ export const LanguageProcessingProvider: React.FC<{
 }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [detector, setDetector] = useState<any>(null);
-  const [translator, setTranslator] = useState<any>(null);
+  const [detector, setDetector] = useState<LanguageDetector | null>(null);
+  const [translator, setTranslator] = useState<Translator | null>(null);
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
 
   const SUPPORTED_LANGUAGES = ["en", "pt", "es", "ru", "tr", "fr"];
@@ -52,8 +67,8 @@ export const LanguageProcessingProvider: React.FC<{
     const setupAPIs = async () => {
       if (
         !("ai" in self) ||
-        !("languageDetector" in (self as any).ai) ||
-        !("translator" in (self as any).ai)
+        !("languageDetector" in (self.ai as any)) ||
+        !("translator" in (self.ai as any))
       ) {
         setError("AI APIs are not supported in this browser.");
         return;
@@ -62,20 +77,20 @@ export const LanguageProcessingProvider: React.FC<{
       try {
         // Setup Language Detector
         const detectorCapabilities = await (
-          self as any
-        ).ai.languageDetector.capabilities();
+          self.ai as any
+        ).languageDetector.capabilities();
         if (detectorCapabilities.capabilities !== "no") {
-          const newDetector = await (self as any).ai.languageDetector.create();
+          const newDetector = await (self.ai as any).languageDetector.create();
           await newDetector.ready;
-          setDetector(newDetector);
+          setDetector(newDetector as LanguageDetector);
         }
 
         // Setup Translator
         const translatorCapabilities = await (
-          self as any
-        ).ai.translator.capabilities();
+          self.ai as any
+        ).translator.capabilities();
         if (translatorCapabilities) {
-          setTranslator((self as any).ai.translator);
+          setTranslator((self.ai as any).translator as Translator);
         }
       } catch (err) {
         setError("Failed to initialize AI APIs.");
@@ -99,8 +114,6 @@ export const LanguageProcessingProvider: React.FC<{
           detectedLanguage: r.detectedLanguage,
           confidence: r.confidence,
         }));
-
-      console.log(results);
 
       if (
         filteredResults.length === 1 &&
@@ -162,9 +175,10 @@ export const LanguageProcessingProvider: React.FC<{
   };
 
   const getLanguageName = (
-    languageTag: string,
+    languageTag: string | null,
     targetLanguage: string = "en"
   ) => {
+    if (!languageTag) return "Unknown";
     try {
       const displayNames = new Intl.DisplayNames([targetLanguage], {
         type: "language",

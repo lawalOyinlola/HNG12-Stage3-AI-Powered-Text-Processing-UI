@@ -23,7 +23,7 @@ This is an AI-powered chat application built using **React** and **TypeScript**.
 
    ```sh
    git clone https://github.com/lawalOyinlola/HNG12-Stage3-AI-Powered-Text-Processing-UI.git
-   cd your-repo
+   cd HNG12-Stage3-AI-Powered-Text-Processing-UI
    ```
 
 2. Install dependencies:
