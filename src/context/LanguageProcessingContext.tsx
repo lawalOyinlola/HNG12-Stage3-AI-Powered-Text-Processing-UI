@@ -52,6 +52,8 @@ export const useLanguageProcessing = () => {
   return context;
 };
 
+const SUPPORTED_LANGUAGES = ["en", "pt", "es", "ru", "tr", "fr"];
+
 export const LanguageProcessingProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
@@ -60,8 +62,6 @@ export const LanguageProcessingProvider: React.FC<{
   const [detector, setDetector] = useState<LanguageDetector | null>(null);
   const [translator, setTranslator] = useState<Translator | null>(null);
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
-
-  const SUPPORTED_LANGUAGES = ["en", "pt", "es", "ru", "tr", "fr"];
 
   useEffect(() => {
     const setupAPIs = async () => {
@@ -109,11 +109,15 @@ export const LanguageProcessingProvider: React.FC<{
     try {
       const results = await detector.detect(text);
       const filteredResults = results
-        .filter((r: DetectedLanguage) => r.confidence >= 0.005)
+        .filter((r: DetectedLanguage) => r.confidence >= 0.3)
         .map((r: DetectedLanguage) => ({
           detectedLanguage: r.detectedLanguage,
           confidence: r.confidence,
         }));
+
+      if (filteredResults.length === 0) {
+        return { detectedLanguage: "Unknown language", confidence: 1 };
+      }
 
       if (
         filteredResults.length === 1 &&
@@ -121,7 +125,6 @@ export const LanguageProcessingProvider: React.FC<{
       ) {
         return filteredResults[0];
       }
-
       return count === 1 ? filteredResults[0] : filteredResults.slice(0, count);
     } catch (err) {
       setError("Error detecting language.");

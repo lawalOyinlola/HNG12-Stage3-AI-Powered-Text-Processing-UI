@@ -73,10 +73,26 @@ body {
 }
 
 .chat-header {
-  padding: 15px;
+  padding: 15px 20px;
   background: var(--primary-color);
-  text-align: center;
+  text-align: left;
   font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+}
+
+.chat-header > button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 5px 10px;
+  border-radius: 8px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.chat-header > button:hover {
+  scale: 1.05;
 }
 
 .chat-box {
@@ -140,28 +156,24 @@ body {
 }
 
 .options-button {
-  color: var(--text-color);
-  font-size: 16px;
-  font-weight: 600;
   cursor: pointer;
   border: none;
   background: none;
-  padding-top: 2px;
-  padding-right: 6px;
+  padding: 0;
 }
 
 .options-button:hover {
-  color: orangered;
+  scale: 1.1;
 }
 
 .user .options-button {
   float: right;
-  padding: 0 0 0 6px;
+  padding-left: 6px;
 }
 
 .bot .options-button {
   float: left;
-  padding: 0 6px 0 0;
+  padding-right: 6px;
 }
 
 .purpose {
@@ -259,6 +271,10 @@ body {
   align-items: start;
 }
 
+.bot .modal button {
+  align-self: end;
+}
+
 .modal > div {
   display: flex;
   gap: 5px;
@@ -271,6 +287,7 @@ body {
 }
 
 .modal > div > select {
+  cursor: pointer;
   border: none;
   background: var(--primary-color);
   color: var(--text-color);
@@ -291,5 +308,5 @@ body {
 }
 
 .modal button:hover {
-  background: var(--primary-color);
+  background: var(--hover-color);
 }

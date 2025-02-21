@@ -32,7 +32,6 @@ export const SummarizerProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [summarizer, setSummarizer] = useState<Summarizer | null>(null);
 
-  // ✅ Check API support and initialize summarizer
   const initializeSummarizer = async () => {
     if (!("ai" in self) || !("summarizer" in (self.ai as any))) {
       setError("Summarizer API is not supported in this browser.");

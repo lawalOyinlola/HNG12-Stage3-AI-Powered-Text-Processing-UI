@@ -1,14 +1,38 @@
 import { useEffect, useRef, useState } from "react";
 import { useLanguageProcessing } from "../context/LanguageProcessingContext";
 import { useSummarizer } from "../context/SummarizerContext";
+import { MoreVertical, Trash2 } from "react-feather";
 
 interface Message {
   id: number;
   text: string;
   language?: string;
+  translatedLanguage?: string;
   sender: string | "user" | "bot";
   purpose?: string | "chat" | "translation" | "summarization";
 }
+
+const SUPPORTED_LANGUAGES = ["en", "pt", "es", "ru", "tr", "fr"];
+const INITIAL_MESSAGES = [
+  {
+    id: 1,
+    text: "Hello! How can I help you?",
+    language: "English",
+    sender: "bot",
+  },
+  {
+    id: 2,
+    text: "Can you translate this text?",
+    language: "English",
+    sender: "user",
+  },
+  {
+    id: 3,
+    text: 'Yes, I can! I can detect the message language as you type. Click the "⋮" button to access options for translation and summarization.',
+    language: "English",
+    sender: "bot",
+  },
+];
 
 const ChatWindow = () => {
   const { detectLanguage, translateText, getLanguageName, isLoading, error } =
@@ -20,57 +44,29 @@ const ChatWindow = () => {
     error: summarizerError,
   } = useSummarizer();
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const storedMessages = localStorage.getItem("chatMessages");
+    return storedMessages ? JSON.parse(storedMessages) : INITIAL_MESSAGES;
+  });
 
   const [inputText, setInputText] = useState("");
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Hello! How can I help you?",
-      language: "English",
-      sender: "bot",
-    },
-    {
-      id: 2,
-      text: "Can you translate this text?",
-      language: "English",
-      sender: "user",
-    },
-    {
-      id: 3,
-      text: 'Yes, I can! I can detect the message language as you type. Click the "⋮" button to access options for translation and summarization.',
-      language: "English",
-      sender: "bot",
-    },
-  ]);
 
   const [selectedMessage, setSelectedMessage] = useState<{
     id: number;
     text: string;
   } | null>(null);
+
   const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
-  const [translatedLanguage, setTranslatedLanguage] = useState<string | null>(
-    null
-  );
-  // const [detectedMessageLanguage, setDetectedMessageLanguage] = useState<
-  //   string | null
-  // >(null);
   const [targetLanguage, setTargetLanguage] = useState("en");
 
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortController = useRef<AbortController | null>(null);
 
-  // useEffect(() => {
-  //   const storedMessages = localStorage.getItem("chatMessages");
-  //   if (storedMessages) {
-  //     setMessages(JSON.parse(storedMessages));
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   localStorage.setItem("chatMessages", JSON.stringify(messages));
-  // }, [messages]);
+  useEffect(() => {
+    if (messages.length > 3) {
+      localStorage.setItem("chatMessages", JSON.stringify(messages));
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (inputText.length < 3) {
@@ -105,40 +101,17 @@ const ChatWindow = () => {
     };
   }, [inputText, detectLanguage, getLanguageName]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  const hasStoredMessages = localStorage.getItem("chatMessages") !== null;
 
-  const handleSummarize = async (
-    text: string,
-    msgId: number,
-    msgLang: string
-  ) => {
-    if (!text.trim()) return;
-
-    const result = await summarizeText(text);
-    if (!result) return;
-
-    const messageIndex = messages.findIndex((msg) => msg.id === msgId);
-    if (messageIndex === -1) return;
-
-    const summaryMessage = {
-      id: Date.now(),
-      purpose: "Summary",
-      text: `Summary: ${result}`,
-      language: msgLang,
-      sender: "bot",
-    };
-
-    const updatedMessages = [
-      ...messages.slice(0, messageIndex + 1),
-      summaryMessage,
-      ...messages.slice(messageIndex + 1),
-    ];
-
-    setMessages(updatedMessages);
-    closeOptions();
+  const handleDelete = () => {
+    if (messages.length > 3) {
+      localStorage.removeItem("chatMessages");
+      setMessages(INITIAL_MESSAGES);
+    }
   };
+
+  const getSupportedLangOptions = (message: Message) =>
+    message.translatedLanguage ?? message.language;
 
   const sendMessage = async () => {
     if (inputText.trim() === "") return;
@@ -185,28 +158,77 @@ const ChatWindow = () => {
   const handleTranslate = async (text: string, msgId: number) => {
     if (!text.trim()) return;
 
-    const detectedLanguage = await handleDetectLanguage(text); // Detect source language
-    if (!detectedLanguage) return;
+    const detectedLanguage = await handleDetectLanguage(text);
+    if (
+      !detectedLanguage ||
+      detectedLanguage === getLanguageName(targetLanguage)
+    )
+      return;
 
     const translation = await translateText(text, targetLanguage);
     if (!translation) return;
 
+    setMessages((prevMessages) => {
+      const messageIndex = prevMessages.findIndex((msg) => msg.id === msgId);
+      if (messageIndex === -1) return prevMessages;
+
+      const existingTranslation = prevMessages.find(
+        (msg) =>
+          msg.purpose === "Translation" &&
+          msg.sender === "bot" &&
+          msgId === msg.id
+      );
+
+      const translatedLanguage = getLanguageName(targetLanguage);
+
+      const newTranslationMessage: Message = {
+        id: existingTranslation ? existingTranslation.id : Date.now(),
+        purpose: "Translation",
+        text: translation,
+        language: `${detectedLanguage} ➝ ${translatedLanguage}`,
+        translatedLanguage: translatedLanguage,
+        sender: "bot",
+      };
+
+      if (existingTranslation) {
+        return prevMessages.map((msg) =>
+          msg.id === existingTranslation.id ? newTranslationMessage : msg
+        );
+      }
+
+      return [
+        ...prevMessages.slice(0, messageIndex + 1),
+        newTranslationMessage,
+        ...prevMessages.slice(messageIndex + 1),
+      ];
+    });
+
+    closeOptions();
+  };
+
+  const handleSummarize = async (text: string, msgId: number) => {
+    if (!text.trim()) return;
+
+    const result = await summarizeText(text);
+    if (!result) return;
+
+    const detectedLanguage = await handleDetectLanguage(text); // Detect source language
+    if (!detectedLanguage) return;
+
     const messageIndex = messages.findIndex((msg) => msg.id === msgId);
     if (messageIndex === -1) return;
 
-    setTranslatedLanguage(targetLanguage);
-
-    const translationMessage = {
+    const summaryMessage = {
       id: Date.now(),
-      purpose: "Translation",
-      text: translation,
-      language: `${detectedLanguage}  ➝  ${getLanguageName(targetLanguage)}`,
+      purpose: "Summary",
+      text: `Summary: ${result}`,
+      language: detectedLanguage,
       sender: "bot",
     };
 
     const updatedMessages = [
       ...messages.slice(0, messageIndex + 1),
-      translationMessage,
+      summaryMessage,
       ...messages.slice(messageIndex + 1),
     ];
 
@@ -217,7 +239,12 @@ const ChatWindow = () => {
   return (
     <div className="chat-container">
       <div className="chat-header">
-        <h1>Chat With Isime</h1>
+        <h1>Chat With Isime</h1>{" "}
+        {hasStoredMessages && (
+          <button onClick={handleDelete}>
+            <Trash2 size={20} color="orangered" cursor={"pointer"} />
+          </button>
+        )}
       </div>
       <div className="chat-box" role="log" aria-live="polite">
         {messages.map((msg) => (
@@ -235,7 +262,6 @@ const ChatWindow = () => {
             aria-label={`Message from ${
               msg.sender === "user" ? "you" : "bot"
             }: ${msg.text}. Press Enter for more options.`}
-            ref={messagesEndRef}
           >
             <button
               className="options-button"
@@ -245,7 +271,7 @@ const ChatWindow = () => {
                 openOptions(msg.id);
               }}
             >
-              ⋮
+              <MoreVertical size={15} color="#fff" cursor={"pointer"} />
             </button>
             {msg.purpose && <div className="purpose">{msg.purpose}</div>}
             {msg.text}
@@ -263,17 +289,15 @@ const ChatWindow = () => {
                     disabled={isLoading}
                   >
                     {isLoading && <option value="">Loading...</option>}
-                    {["en", "pt", "es", "ru", "tr", "fr"]
-                      .filter(
-                        (lang) =>
-                          getLanguageName(lang) !== msg.language ||
-                          translatedLanguage
-                      )
-                      .map((lang) => (
-                        <option key={lang} value={lang}>
-                          {getLanguageName(lang)}
-                        </option>
-                      ))}
+                    <option value="">Language</option>
+                    {SUPPORTED_LANGUAGES.filter(
+                      (lang) =>
+                        getLanguageName(lang) !== getSupportedLangOptions(msg)
+                    ).map((lang) => (
+                      <option key={lang} value={lang}>
+                        {getLanguageName(lang)}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <button
@@ -287,16 +311,13 @@ const ChatWindow = () => {
 
                 {msg.text.length > 150 && (
                   <button
-                    onClick={() =>
-                      handleSummarize(msg.text, msg.id, msg.language)
-                    }
+                    onClick={() => handleSummarize(msg.text, msg.id)}
                     disabled={isLoading}
                   >
-                    Summarize
+                    {summarizerIsLoading ? " Summarizing..." : " Summarize"}
                   </button>
                 )}
 
-                {summarizerIsLoading && <p>Summarizing...</p>}
                 {summarizerError && <p>{summarizerError}</p>}
               </div>
             )}
