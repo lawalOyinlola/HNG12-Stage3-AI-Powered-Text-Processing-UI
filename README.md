@@ -9,13 +9,14 @@ This is an AI-powered chat application built using **React** and **TypeScript**.
 ✅ **Text Summarization**: Summarizes long messages using AI-powered summarization.
 ✅ **Message Storage**: Messages persist using local storage.
 ✅ **Accessibility**: Supports keyboard navigation and screen readers.
-✅ **Interactive UI**: Users can long-press messages to access options.
+✅ **Interactive UI**: Chat-like interface with user-friendly interactions.
 
 ## Tech Stack
 
-- **React** (with Hooks & Context API)
-- **TypeScript**
-- **Chrome AI APIs** (for language processing)
+- **Frontend**: React, TypeScript, CSS Modules
+- **APIs**: Chrome AI APIs for text processing
+- **State Management**: useState and useEffect hooks
+- **Storage**: Local Storage for message persistence
 
 ## Installation
 
@@ -41,6 +42,8 @@ This is an AI-powered chat application built using **React** and **TypeScript**.
 
 1. **Start Chatting**: Type a message and send it.
 2. **Detect Language**: The app automatically detects the language of the input text.
+   - Language detection runs automatically when a message is sent.
+   - Sent messages are saved in local storage and persist across sessions.
 3. **Translate Messages**:
    - Click the '⋮' button on a message.
    - Select a target language.
@@ -55,10 +58,18 @@ This is an AI-powered chat application built using **React** and **TypeScript**.
 - Screen reader-friendly labels.
 - ARIA attributes for dynamic elements.
 
+## Clearing Chat History
+
+- To reset chat history and restore initial messages:
+- Click the "Clear Chat" button (visible only when history exists).
+
 ## Known Issues & Improvements
 
-- **Delayed Summarization**: The first attempt to summarize may show an error due to initialization delays.
 - **Better UI for Message Actions**: Could improve how users interact with translation and summarization options.
+- **Better overall User Interface**
+- **Improve User Experience**: Capture and display users name.
+- **Add Voice/Streaming Detection**
+- **Add Chrome Prompt AI**
 
 ## Contributing
 
