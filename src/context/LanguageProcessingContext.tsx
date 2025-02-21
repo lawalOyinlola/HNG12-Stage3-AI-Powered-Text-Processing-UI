@@ -143,6 +143,7 @@ export const LanguageProcessingProvider: React.FC<{
       ).join(", ")}`;
     }
     setIsLoading(true);
+    setError(null);
 
     try {
       const detectedLanguageResult = await detectLanguage(text, 1);

@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useLanguageProcessing } from "../context/LanguageProcessingContext";
 import { useSummarizer } from "../context/SummarizerContext";
-import { MoreVertical } from "react-feather";
+
+interface Message {
+  id: number;
+  text: string;
+  language?: string;
+  sender: string | "user" | "bot";
+  purpose?: string | "chat" | "translation" | "summarization";
+}
 
 const ChatWindow = () => {
-  const {
-    detectLanguage,
-    translateText,
-    getLanguageName,
-    sourceLanguage,
-    isLoading,
-    error,
-  } = useLanguageProcessing();
+  const { detectLanguage, translateText, getLanguageName, isLoading, error } =
+    useLanguageProcessing();
 
   const {
     summarizeText,
@@ -19,15 +20,28 @@ const ChatWindow = () => {
     error: summarizerError,
   } = useSummarizer();
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const [inputText, setInputText] = useState("");
 
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! How can I help you?", type: "bot" },
-    { id: 2, text: "Can you translate this text?", type: "user" },
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 1,
+      text: "Hello! How can I help you?",
+      language: "English",
+      sender: "bot",
+    },
+    {
+      id: 2,
+      text: "Can you translate this text?",
+      language: "English",
+      sender: "user",
+    },
     {
       id: 3,
       text: 'Yes, I can! I can detect the message language as you type. Click the "⋮" button to access options for translation and summarization.',
-      type: "bot",
+      language: "English",
+      sender: "bot",
     },
   ]);
 
@@ -36,25 +50,27 @@ const ChatWindow = () => {
     text: string;
   } | null>(null);
   const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
-  const [detectedMessageLanguage, setDetectedMessageLanguage] = useState<
-    string | null
-  >(null);
-  // const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [translatedLanguage, setTranslatedLanguage] = useState<string | null>(
+    null
+  );
+  // const [detectedMessageLanguage, setDetectedMessageLanguage] = useState<
+  //   string | null
+  // >(null);
   const [targetLanguage, setTargetLanguage] = useState("en");
 
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortController = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    const storedMessages = localStorage.getItem("chatMessages");
-    if (storedMessages) {
-      setMessages(JSON.parse(storedMessages));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const storedMessages = localStorage.getItem("chatMessages");
+  //   if (storedMessages) {
+  //     setMessages(JSON.parse(storedMessages));
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    localStorage.setItem("chatMessages", JSON.stringify(messages));
-  }, [messages]);
+  // useEffect(() => {
+  //   localStorage.setItem("chatMessages", JSON.stringify(messages));
+  // }, [messages]);
 
   useEffect(() => {
     if (inputText.length < 3) {
@@ -62,13 +78,10 @@ const ChatWindow = () => {
       return;
     }
 
-    // Clear previous timeout to prevent unnecessary detections
     if (typingTimeout.current) clearTimeout(typingTimeout.current);
 
-    // Abort the previous request if user is still typing
     if (abortController.current) abortController.current.abort();
 
-    // Create a new abort controller for this request
     abortController.current = new AbortController();
 
     typingTimeout.current = setTimeout(async () => {
@@ -85,14 +98,22 @@ const ChatWindow = () => {
       } catch (error) {
         console.error("Language detection aborted or failed:", error);
       }
-    }, 1000);
+    }, 500);
 
     return () => {
       if (typingTimeout.current) clearTimeout(typingTimeout.current);
     };
   }, [inputText, detectLanguage, getLanguageName]);
 
-  const handleSummarize = async (text: string, msgId: number) => {
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const handleSummarize = async (
+    text: string,
+    msgId: number,
+    msgLang: string
+  ) => {
     if (!text.trim()) return;
 
     const result = await summarizeText(text);
@@ -103,8 +124,10 @@ const ChatWindow = () => {
 
     const summaryMessage = {
       id: Date.now(),
+      purpose: "Summary",
       text: `Summary: ${result}`,
-      type: "bot",
+      language: msgLang,
+      sender: "bot",
     };
 
     const updatedMessages = [
@@ -117,15 +140,22 @@ const ChatWindow = () => {
     closeOptions();
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (inputText.trim() === "") return;
+
+    const detectedLanguage = await handleDetectLanguage(inputText);
+
     setMessages([
       ...messages,
-      { id: Date.now(), text: inputText, type: "user" },
+      {
+        id: Date.now(),
+        text: inputText,
+        language: detectedLanguage || "Unknown",
+        sender: "user",
+      },
     ]);
-    setInputText("");
 
-    handleDetectLanguage();
+    setInputText("");
   };
 
   const openOptions = (id: number) => {
@@ -135,7 +165,6 @@ const ChatWindow = () => {
 
   const closeOptions = () => {
     setSelectedMessage(null);
-    setDetectedMessageLanguage(null);
   };
 
   const handleDetectLanguage = async (text?: string) => {
@@ -150,29 +179,29 @@ const ChatWindow = () => {
         : getLanguageName(detectionResult.detectedLanguage)
       : null;
 
-    if (text) {
-      setDetectedMessageLanguage(languageName);
-    } else {
-      setDetectedLanguage(languageName);
-    }
+    return languageName;
   };
 
-  const handleTranslate = async (
-    text: string,
-    targetLang: string,
-    msgId: number
-  ) => {
-    if (!text.trim) return;
-    const translation = await translateText(text, targetLang);
+  const handleTranslate = async (text: string, msgId: number) => {
+    if (!text.trim()) return;
+
+    const detectedLanguage = await handleDetectLanguage(text); // Detect source language
+    if (!detectedLanguage) return;
+
+    const translation = await translateText(text, targetLanguage);
     if (!translation) return;
 
     const messageIndex = messages.findIndex((msg) => msg.id === msgId);
     if (messageIndex === -1) return;
 
+    setTranslatedLanguage(targetLanguage);
+
     const translationMessage = {
       id: Date.now(),
-      text: `Translation: ${translation}`,
-      type: "bot",
+      purpose: "Translation",
+      text: translation,
+      language: `${detectedLanguage}  ➝  ${getLanguageName(targetLanguage)}`,
+      sender: "bot",
     };
 
     const updatedMessages = [
@@ -194,7 +223,7 @@ const ChatWindow = () => {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`message ${msg.type} ${
+            className={`message ${msg.sender} ${
               selectedMessage?.id === msg.id && "selected"
             }`}
             role="button"
@@ -203,9 +232,10 @@ const ChatWindow = () => {
               if (e.key === "Enter" || e.key === " ") openOptions(msg.id);
             }}
             onClick={closeOptions}
-            aria-label={`Message from ${msg.type === "user" ? "you" : "bot"}: ${
-              msg.text
-            }. Press Enter for more options.`}
+            aria-label={`Message from ${
+              msg.sender === "user" ? "you" : "bot"
+            }: ${msg.text}. Press Enter for more options.`}
+            ref={messagesEndRef}
           >
             <button
               className="options-button"
@@ -215,9 +245,11 @@ const ChatWindow = () => {
                 openOptions(msg.id);
               }}
             >
-              <MoreVertical size={16} color="#fff" />
+              ⋮
             </button>
+            {msg.purpose && <div className="purpose">{msg.purpose}</div>}
             {msg.text}
+            {<em className="language">{msg.language}</em>}
 
             {selectedMessage?.id === msg.id && (
               <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -226,43 +258,37 @@ const ChatWindow = () => {
                   <select
                     value={targetLanguage}
                     onChange={(e) => {
-                      const newLanguage = e.target.value;
-                      if (newLanguage === sourceLanguage) return;
-                      setTargetLanguage(newLanguage);
-                      handleTranslate(
-                        selectedMessage.text,
-                        newLanguage,
-                        selectedMessage.id
-                      );
+                      setTargetLanguage(e.target.value);
                     }}
                     disabled={isLoading}
                   >
                     {isLoading && <option value="">Loading...</option>}
-                    <option value="en">English</option>
-                    <option value="pt">Portuguese</option>
-                    <option value="es">Spanish</option>
-                    <option value="ru">Russian</option>
-                    <option value="tr">Turkish</option>
-                    <option value="fr">French</option>
+                    {["en", "pt", "es", "ru", "tr", "fr"]
+                      .filter(
+                        (lang) =>
+                          getLanguageName(lang) !== msg.language ||
+                          translatedLanguage
+                      )
+                      .map((lang) => (
+                        <option key={lang} value={lang}>
+                          {getLanguageName(lang)}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <button
-                  onClick={() =>
-                    handleDetectLanguage(selectedMessage?.text || "")
-                  }
+                  onClick={() => handleTranslate(msg.text, msg.id)}
                   disabled={isLoading}
                 >
-                  Detect Language
+                  {isLoading ? "Translating..." : "Translate"}
                 </button>
-                {detectedMessageLanguage && (
-                  <p>≫ Language is in {detectedMessageLanguage}</p>
-                )}
+
                 {error && <p> {error}</p>}
 
-                {selectedMessage.text.length > 150 && (
+                {msg.text.length > 150 && (
                   <button
                     onClick={() =>
-                      handleSummarize(selectedMessage.text, selectedMessage.id)
+                      handleSummarize(msg.text, msg.id, msg.language)
                     }
                     disabled={isLoading}
                   >

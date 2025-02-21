@@ -81,17 +81,18 @@ body {
 
 .chat-box {
   flex: 1;
-  padding: 15px 10px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   overflow-y: scroll;
   scroll-behavior: smooth;
 }
 
 .message {
+  position: relative;
+  min-width: 45%;
   max-width: 75%;
-  padding: 10px 15px;
   word-wrap: break-word;
   transition: transform 0.2s ease-in-out;
 }
@@ -100,19 +101,48 @@ body {
   transform: scale(1.02);
 }
 
+.message.user {
+  min-width: 20%;
+}
+
 .bot {
   align-self: flex-start;
   background: var(--primary-color);
   border-radius: 0 20px 20px;
+  padding: 10px 15px 10px 12px;
+}
+
+.bot::after {
+  content: "";
+  position: absolute;
+  visibility: visible;
+  top: 0;
+  left: -10px;
+  border: 10px solid transparent;
+  border-top: 10px solid var(--primary-color);
 }
 
 .user {
-  border-radius: 20px 20px 0;
   align-self: flex-end;
   background: var(--grey-color);
+  border-radius: 20px 0 20px 20px;
+  padding: 10px 12px 10px 15px;
+}
+
+.user::before {
+  content: "";
+  position: absolute;
+  visibility: visible;
+  top: 0;
+  right: -10px;
+  border: 10px solid transparent;
+  border-top: 10px solid var(--grey-color);
 }
 
 .options-button {
+  color: var(--text-color);
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   border: none;
   background: none;
@@ -120,14 +150,33 @@ body {
   padding-right: 6px;
 }
 
-.options-button:hover .more {
+.options-button:hover {
   color: orangered;
 }
 
 .user .options-button {
   float: right;
-  padding-left: 6px;
-  padding-right: 0;
+  padding: 0 0 0 6px;
+}
+
+.bot .options-button {
+  float: left;
+  padding: 0 6px 0 0;
+}
+
+.purpose {
+  width: 100%;
+  border-bottom: 1px solid white;
+  padding: 0 0px 5px;
+  margin-bottom: 5px;
+  margin-left: 10px;
+}
+
+.language {
+  display: block;
+  text-align: right;
+  padding-top: 5px;
+  font-size: 10px;
 }
 
 .input-area {
@@ -230,11 +279,15 @@ body {
 }
 
 .modal button {
-  padding: 5px 10px;
+  cursor: pointer;
+  padding: 5px 16px;
   border: none;
   background: none;
   color: white;
-  cursor: pointer;
+  background: var(--bg-color);
+  border-radius: 4px;
+  border-bottom: 2px solid var(--grey-color);
+  border-right: 2px solid var(--grey-color);
 }
 
 .modal button:hover {
