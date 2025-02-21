@@ -107,7 +107,6 @@ body {
 
 .message {
   position: relative;
-  min-width: 45%;
   max-width: 75%;
   word-wrap: break-word;
   transition: transform 0.2s ease-in-out;
