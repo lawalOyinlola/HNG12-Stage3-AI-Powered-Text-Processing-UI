@@ -10,6 +10,8 @@ This is an AI-powered chat application built using **React** and **TypeScript**.
 ✅ **Message Storage**: Messages persist using local storage.
 ✅ **Accessibility**: Supports keyboard navigation and screen readers.
 ✅ **Interactive UI**: Chat-like interface with user-friendly interactions.
+✅ **Smooth Animations**: Uses FormKit AutoAnimate for chat animations.  
+✅ **Auto Scroll**: New messages automatically scroll into view.
 
 ## Tech Stack
 
@@ -17,6 +19,7 @@ This is an AI-powered chat application built using **React** and **TypeScript**.
 - **APIs**: Chrome AI APIs for text processing
 - **State Management**: useState and useEffect hooks
 - **Storage**: Local Storage for message persistence
+- **Animations**: FormKit AutoAnimate for smooth UI transitions
 
 ## Installation
 

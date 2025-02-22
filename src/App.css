@@ -59,6 +59,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+button {
+  font-family: sans-serif;
+}
+
 .chat-container {
   position: relative;
   display: flex;
@@ -223,6 +227,7 @@ body {
 
 .input-area textarea {
   flex: 1;
+  font-family: JejuMyeongjo, serif;
   font-size: 1.6rem;
   padding: 10px;
   border: none;
@@ -309,6 +314,7 @@ body {
 }
 
 .modal > div > select {
+  font-family: JejuMyeongjo, serif;
   cursor: pointer;
   border: none;
   background: var(--primary-color);

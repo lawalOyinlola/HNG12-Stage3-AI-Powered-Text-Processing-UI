@@ -45,7 +45,6 @@ const ChatWindow = () => {
     translatorError,
     error,
   } = useLanguageProcessing();
-
   const {
     summarizeText,
     isLoading: summarizerIsLoading,
@@ -56,21 +55,17 @@ const ChatWindow = () => {
 
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortController = useRef<AbortController | null>(null);
-
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
 
   const [messages, setMessages] = useState<Message[]>(() => {
     const storedMessages = localStorage.getItem("chatMessages");
     return storedMessages ? JSON.parse(storedMessages) : INITIAL_MESSAGES;
   });
-
   const [inputText, setInputText] = useState("");
-
   const [selectedMessage, setSelectedMessage] = useState<{
     id: number;
     text: string;
   } | null>(null);
-
   const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
   const [targetLanguage, setTargetLanguage] = useState("en");
 
@@ -123,6 +118,19 @@ const ChatWindow = () => {
   }, [inputText, error, detectLanguage, getLanguageName]);
 
   const hasStoredMessages = localStorage.getItem("chatMessages") !== null;
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const target = e.currentTarget;
+      if (target.value.trim()) {
+        sendMessage();
+        setInputText("");
+      }
+    }
+  };
 
   const handleDelete = () => {
     if (messages.length > 3) {
@@ -245,7 +253,7 @@ const ChatWindow = () => {
     const result = await summarizeText(text);
     if (!result) return;
 
-    const detectedLanguage = await handleDetectLanguage(text); // Detect source language
+    const detectedLanguage = await handleDetectLanguage(text);
     if (!detectedLanguage) return;
 
     const messageIndex = messages.findIndex((msg) => msg.id === msgId);
@@ -300,7 +308,7 @@ const ChatWindow = () => {
             aria-label={`Message from ${
               msg.sender === "user" ? "you" : "bot"
             }: ${msg.text}. Press Enter for more options.`}
-            ref={index === messages.length - 1 ? lastMessageRef : null} // Attach ref to last message
+            ref={index === messages.length - 1 ? lastMessageRef : null}
           >
             <button
               className="options-button"
@@ -370,6 +378,7 @@ const ChatWindow = () => {
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Type a message..."
           aria-label="Type your message here"
+          onKeyDown={handleKeyDown}
         />
         <button onClick={sendMessage} aria-label="Send message">
           ➤
