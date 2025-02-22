@@ -101,8 +101,30 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow-y: scroll;
+  overflow-y: auto;
   scroll-behavior: smooth;
+  scrollbar-width: 2px;
+  scrollbar-color: var(--grey-color) var(--hover-color);
+}
+
+.chat-box::-webkit-scrollbar {
+  width: 2px;
+}
+
+.chat-box::-webkit-scrollbar-track {
+  background: var(--hover-color);
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+  background: var(--hover-color);
+  border-radius: 4px;
+}
+
+.chat-box::-webkit-scrollbar-thumb:hover,
+.chat-box::-webkit-scrollbar-track:hover,
+.chat-box::-webkit-scrollbar:hover {
+  scale: 1;
+  background: var(--hover-color);
 }
 
 .message {

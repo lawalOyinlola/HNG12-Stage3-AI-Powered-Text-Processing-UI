@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { useLanguageProcessing } from "../context/LanguageProcessingContext";
 import { useSummarizer } from "../context/SummarizerContext";
 import { MoreVertical, Trash2 } from "react-feather";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 interface Message {
   id: number;
+  originalMessageId?: number;
   text: string;
   language?: string;
   translatedLanguage?: string;
   sender: string | "user" | "bot";
-  purpose?: string | "chat" | "translation" | "summarization";
+  purpose?: string | "Translation" | "Summary";
 }
 
 const SUPPORTED_LANGUAGES = ["en", "pt", "es", "ru", "tr", "fr"];
@@ -35,14 +37,27 @@ const INITIAL_MESSAGES = [
 ];
 
 const ChatWindow = () => {
-  const { detectLanguage, translateText, getLanguageName, isLoading, error } =
-    useLanguageProcessing();
+  const {
+    detectLanguage,
+    translateText,
+    getLanguageName,
+    isLoading,
+    translatorError,
+    error,
+  } = useLanguageProcessing();
 
   const {
     summarizeText,
     isLoading: summarizerIsLoading,
     error: summarizerError,
   } = useSummarizer();
+
+  const [animateMessages] = useAutoAnimate();
+
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortController = useRef<AbortController | null>(null);
+
+  const lastMessageRef = useRef<HTMLDivElement | null>(null);
 
   const [messages, setMessages] = useState<Message[]>(() => {
     const storedMessages = localStorage.getItem("chatMessages");
@@ -59,8 +74,14 @@ const ChatWindow = () => {
   const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
   const [targetLanguage, setTargetLanguage] = useState("en");
 
-  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortController = useRef<AbortController | null>(null);
+  useEffect(() => {
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (messages.length > 3) {
@@ -99,7 +120,7 @@ const ChatWindow = () => {
     return () => {
       if (typingTimeout.current) clearTimeout(typingTimeout.current);
     };
-  }, [inputText, detectLanguage, getLanguageName]);
+  }, [inputText, error, detectLanguage, getLanguageName]);
 
   const hasStoredMessages = localStorage.getItem("chatMessages") !== null;
 
@@ -118,8 +139,8 @@ const ChatWindow = () => {
 
     const detectedLanguage = await handleDetectLanguage(inputText);
 
-    setMessages([
-      ...messages,
+    setMessages((prevMessages) => [
+      ...prevMessages,
       {
         id: Date.now(),
         text: inputText,
@@ -172,17 +193,20 @@ const ChatWindow = () => {
       const messageIndex = prevMessages.findIndex((msg) => msg.id === msgId);
       if (messageIndex === -1) return prevMessages;
 
+      const translatedLanguage = getLanguageName(targetLanguage);
+
       const existingTranslation = prevMessages.find(
         (msg) =>
           msg.purpose === "Translation" &&
           msg.sender === "bot" &&
-          msgId === msg.id
+          (msg.originalMessageId === msgId || msg.id === msgId)
       );
 
-      const translatedLanguage = getLanguageName(targetLanguage);
-
-      const newTranslationMessage: Message = {
+      const translationMessage: Message = {
         id: existingTranslation ? existingTranslation.id : Date.now(),
+        originalMessageId: existingTranslation
+          ? existingTranslation.originalMessageId
+          : msgId,
         purpose: "Translation",
         text: translation,
         language: `${detectedLanguage} ➝ ${translatedLanguage}`,
@@ -190,17 +214,26 @@ const ChatWindow = () => {
         sender: "bot",
       };
 
+      let updatedMessages = [...prevMessages];
+
       if (existingTranslation) {
-        return prevMessages.map((msg) =>
-          msg.id === existingTranslation.id ? newTranslationMessage : msg
+        updatedMessages = updatedMessages.map((msg) =>
+          msg.id === existingTranslation.id ? translationMessage : msg
         );
+      } else {
+        updatedMessages = updatedMessages.filter(
+          (msg) =>
+            !(
+              msg.purpose === "Translation" &&
+              msg.sender === "bot" &&
+              msg.originalMessageId === msgId
+            )
+        );
+
+        updatedMessages.splice(messageIndex + 1, 0, translationMessage);
       }
 
-      return [
-        ...prevMessages.slice(0, messageIndex + 1),
-        newTranslationMessage,
-        ...prevMessages.slice(messageIndex + 1),
-      ];
+      return updatedMessages;
     });
 
     closeOptions();
@@ -246,8 +279,13 @@ const ChatWindow = () => {
           </button>
         )}
       </div>
-      <div className="chat-box" role="log" aria-live="polite">
-        {messages.map((msg) => (
+      <div
+        className="chat-box"
+        role="log"
+        aria-live="polite"
+        ref={animateMessages}
+      >
+        {messages.map((msg, index) => (
           <div
             key={msg.id}
             className={`message ${msg.sender} ${
@@ -262,6 +300,7 @@ const ChatWindow = () => {
             aria-label={`Message from ${
               msg.sender === "user" ? "you" : "bot"
             }: ${msg.text}. Press Enter for more options.`}
+            ref={index === messages.length - 1 ? lastMessageRef : null} // Attach ref to last message
           >
             <button
               className="options-button"
@@ -308,6 +347,7 @@ const ChatWindow = () => {
                 </button>
 
                 {error && <p> {error}</p>}
+                {translatorError && <p> {translatorError}</p>}
 
                 {msg.text.length > 150 && (
                   <button

@@ -35,6 +35,7 @@ interface LanguageProcessingContextProps {
   ) => string;
   sourceLanguage: string | null;
   isLoading: boolean;
+  translatorError: string | null;
   error: string | null;
 }
 
@@ -59,6 +60,7 @@ export const LanguageProcessingProvider: React.FC<{
 }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [translatorError, setTranslatorError] = useState<string | null>(null);
   const [detector, setDetector] = useState<LanguageDetector | null>(null);
   const [translator, setTranslator] = useState<Translator | null>(null);
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
@@ -147,6 +149,7 @@ export const LanguageProcessingProvider: React.FC<{
     }
     setIsLoading(true);
     setError(null);
+    setTranslatorError(null);
 
     try {
       const detectedLanguageResult = await detectLanguage(text, 1);
@@ -171,7 +174,7 @@ export const LanguageProcessingProvider: React.FC<{
       setSourceLanguage(sourceLanguage);
       return translatedText;
     } catch (err) {
-      setError("Error translating text.");
+      setTranslatorError("Error translating text.");
       return null;
     } finally {
       setIsLoading(false);
@@ -201,6 +204,7 @@ export const LanguageProcessingProvider: React.FC<{
         getLanguageName,
         sourceLanguage,
         isLoading,
+        translatorError,
         error,
       }}
     >
